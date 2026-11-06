@@ -38,7 +38,7 @@ class VideoWorker(threading.Thread):
 
     def _finish(self, item, complete):
         item["writer"].release()
-        final = item["path"].with_suffix(".avi")
+        final = item["path"].with_name(item["id"] + ".avi")
         item["path"].replace(final)
         metadata = {k: v for k, v in item.items() if k not in ("writer", "path")}
         metadata["complete"] = complete
