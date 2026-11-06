@@ -1,0 +1,28 @@
+name: Verify and build Windows prototype
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q safety_monitor tools tests
+      - run: python -m unittest discover -s tests -v
+      - run: python -m pip install pyinstaller==6.11.1
+      - run: python -m PyInstaller --noconfirm --windowed --onedir --name HeightSafety launch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HeightSafety-windows-${{ github.sha }}
+          path: dist/HeightSafety/
+          retention-days: 90
