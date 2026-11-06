@@ -21,8 +21,40 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: python -m pip install pyinstaller==6.11.1
       - run: python -m PyInstaller --noconfirm --windowed --onedir --name HeightSafety launch.py
+      - name: Smoke test packaged executable
+        shell: pwsh
+        run: |
+          $appProcess = Start-Process -FilePath './dist/HeightSafety/HeightSafety.exe' -ArgumentList '--smoke-test' -PassThru -WindowStyle Hidden
+          if (-not $appProcess.WaitForExit(60000)) { $appProcess.Kill(); throw 'Packaged GUI timed out' }
+          if ($appProcess.ExitCode -ne 0) { throw 'Packaged GUI failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: HeightSafety-windows-${{ github.sha }}
           path: dist/HeightSafety/
           retention-days: 90
+  archive:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: HeightSafety-windows-${{ github.sha }}
+          path: package/HeightSafety
+      - name: Archive tested build with immutable version tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          Compress-Archive -Path package/HeightSafety -DestinationPath HeightSafety-windows.zip
+          $archiveTag = "v0.1.0-alpha.1-build.$env:BUILD_NUMBER"
+          $archiveNotes = "Windows workflow prototype. Manual events only; automatic violation detection and tracking are pending. Precision/Recall 95% and 30 FPS are NOT verified. Commit: $env:BUILD_SHA"
+          gh release create $archiveTag HeightSafety-windows.zip --target $env:BUILD_SHA --prerelease --title $archiveTag --notes $archiveNotes
+          if ($LASTEXITCODE -ne 0) { throw 'Release archive failed' }

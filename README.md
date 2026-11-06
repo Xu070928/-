@@ -10,7 +10,7 @@
 在 GitHub Actions 的成功构建页面下载 HeightSafety-windows 对应提交的产物，解压整个文件夹后运行 HeightSafety.exe。必须保留 _internal 目录。
 首次运行自行创建管理员（密码至少10位），没有默认密码。
 运行时不联网、不上传录像；初次安装依赖和下载程序需要联网。
-当前构建产物默认保存90天；源码提交永久可追溯，正式发行版应另存 GitHub Release。
+测试通过的分支构建自动保存到 GitHub Releases（预发行版），包含版本标签、提交SHA和Windows完整程序包；Actions临时产物保留90天。
 
 源码启动需要 Python 3.11：
 ~~~powershell
